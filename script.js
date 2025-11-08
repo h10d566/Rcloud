@@ -1,9 +1,9 @@
-// تكوين Firebase
+// تكوين Firebase - معدل
 const firebaseConfig = {
     apiKey: "AIzaSyD3JAkLqDasFoqChKxFp9JsJZjPGCelJzc",
     authDomain: "rcloud-efb73.firebaseapp.com",
     projectId: "rcloud-efb73",
-    storageBucket: "rcloud-efb73.firebasestorage.app",
+    storageBucket: "rcloud-efb73.appspot.com", // ⬅️ تم التصحيح هنا
     messagingSenderId: "725249738242",
     appId: "1:725249738242:web:18372ce51017f0c05b891b"
 };
@@ -28,13 +28,8 @@ function initializeApp() {
     totalFiles = document.getElementById('totalFiles');
     totalSize = document.getElementById('totalSize');
     
-    // التحقق من وجود العناصر
-    if (!uploadArea || !fileInput) {
-        console.error('عناصر الرفع غير موجودة!');
-        return;
-    }
-    
-    console.log('التطبيق جاهز للرفع...');
+    console.log('🔥 Rcloud جاهز للعمل!');
+    console.log('📦 Storage Bucket:', firebaseConfig.storageBucket);
     
     // إعداد الأحداث
     setupEvents();
@@ -53,7 +48,6 @@ function setupEvents() {
     
     // أحداث الرفع
     uploadArea.addEventListener('click', () => {
-        console.log('النقر على منطقة الرفع');
         fileInput.click();
     });
     
@@ -69,29 +63,22 @@ function setupEvents() {
     uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadArea.classList.remove('dragover');
-        console.log('تم إفلات الملفات:', e.dataTransfer.files.length);
         handleFiles(e.dataTransfer.files);
     });
     
     // حدث اختيار الملفات
     fileInput.addEventListener('change', (e) => {
-        console.log('تم اختيار الملفات:', e.target.files.length);
         handleFiles(e.target.files);
     });
 }
 
 // معالجة الملفات
 function handleFiles(files) {
-    if (!files || files.length === 0) {
-        console.log('لا توجد ملفات');
-        return;
-    }
-    
-    console.log('معالجة', files.length, 'ملف');
+    if (!files || files.length === 0) return;
     
     for (let file of files) {
-        if (file.size > 100 * 1024 * 1024) {
-            alert(`الملف ${file.name} أكبر من 100MB`);
+        if (file.size > 50 * 1024 * 1024) { // 50MB حد
+            alert(`الملف ${file.name} أكبر من 50MB`);
             continue;
         }
         uploadFile(file);
@@ -100,12 +87,10 @@ function handleFiles(files) {
 
 // رفع الملف
 function uploadFile(file) {
-    console.log('بدء رفع الملف:', file.name);
+    console.log('📤 بدء رفع:', file.name);
     
     const fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-' + file.name;
     const storageRef = storage.ref().child('files/' + fileId);
-    
-    console.log('المرجع:', storageRef.fullPath);
     
     const uploadTask = storageRef.put(file);
 
@@ -117,26 +102,21 @@ function uploadFile(file) {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             const progressBar = fileItem.querySelector('.progress');
             progressBar.style.width = progress + '%';
-            console.log('التقدم:', progress + '%');
         },
         (error) => {
-            console.error('خطأ في الرفع:', error);
+            console.error('❌ خطأ في الرفع:', error);
             fileItem.style.background = '#f8d7da';
             fileItem.querySelector('.file-date').textContent = 'فشل الرفع';
-            alert('❌ خطأ في رفع الملف: ' + error.message);
+            alert('خطأ في رفع الملف: ' + error.message);
         },
         async () => {
-            console.log('✅ اكتمل رفع الملف:', file.name);
+            console.log('✅ اكتمل رفع:', file.name);
             fileItem.style.background = '#d4edda';
-            try {
-                const metadata = await storageRef.getMetadata();
-                const uploadDate = new Date(metadata.timeCreated).toLocaleDateString('ar-SA');
-                fileItem.querySelector('.file-date').textContent = uploadDate;
-                loadFiles();
-                updateStats();
-            } catch (error) {
-                console.error('خطأ في الحصول على الميتاداتا:', error);
-            }
+            const metadata = await storageRef.getMetadata();
+            const uploadDate = new Date(metadata.timeCreated).toLocaleDateString('ar-SA');
+            fileItem.querySelector('.file-date').textContent = uploadDate;
+            loadFiles();
+            updateStats();
         }
     );
 }
@@ -195,7 +175,6 @@ function formatFileSize(bytes) {
 // تحميل الملف
 async function downloadFile(fileId, fileName) {
     try {
-        console.log('بدء تحميل الملف:', fileId);
         const storageRef = storage.ref().child('files/' + fileId);
         const url = await storageRef.getDownloadURL();
         
@@ -203,25 +182,23 @@ async function downloadFile(fileId, fileName) {
         link.href = url;
         link.download = fileName;
         link.click();
-        console.log('✅ اكتمل التحميل');
     } catch (error) {
-        console.error('خطأ في التحميل:', error);
-        alert('❌ خطأ في تحميل الملف: ' + error.message);
+        console.error('❌ خطأ في التحميل:', error);
+        alert('خطأ في تحميل الملف');
     }
 }
 
 // مشاركة الملف
 async function shareFile(fileId, fileName) {
     try {
-        console.log('بدء مشاركة الملف:', fileId);
         const storageRef = storage.ref().child('files/' + fileId);
         const url = await storageRef.getDownloadURL();
         
         await navigator.clipboard.writeText(url);
         alert('✅ تم نسخ رابط المشاركة');
     } catch (error) {
-        console.error('خطأ في المشاركة:', error);
-        alert('❌ خطأ في إنشاء رابط المشاركة: ' + error.message);
+        console.error('❌ خطأ في المشاركة:', error);
+        alert('خطأ في إنشاء رابط المشاركة');
     }
 }
 
@@ -229,15 +206,13 @@ async function shareFile(fileId, fileName) {
 async function deleteFile(fileId) {
     if (confirm('⚠️ هل أنت متأكد من حذف هذا الملف؟')) {
         try {
-            console.log('بدء حذف الملف:', fileId);
             const storageRef = storage.ref().child('files/' + fileId);
             await storageRef.delete();
             loadFiles();
             updateStats();
-            console.log('✅ اكتمل الحذف');
         } catch (error) {
-            console.error('خطأ في الحذف:', error);
-            alert('❌ خطأ في حذف الملف: ' + error.message);
+            console.error('❌ خطأ في الحذف:', error);
+            alert('خطأ في حذف الملف');
         }
     }
 }
@@ -245,27 +220,23 @@ async function deleteFile(fileId) {
 // تحميل الملفات
 async function loadFiles() {
     try {
-        console.log('جاري تحميل الملفات...');
+        console.log('🔄 جاري تحميل الملفات...');
         const listRef = storage.ref().child('files');
         const result = await listRef.listAll();
         
         filesList.innerHTML = '';
-        console.log('تم العثور على', result.items.length, 'ملف');
+        console.log('📁 عدد الملفات:', result.items.length);
         
         for (let item of result.items) {
-            try {
-                const metadata = await item.getMetadata();
-                const fileName = metadata.name.split('-').slice(2).join('-');
-                const uploadDate = new Date(metadata.timeCreated).toLocaleDateString('ar-SA');
-                createFileItem(fileName, metadata.name, metadata.size, uploadDate);
-            } catch (error) {
-                console.error('خطأ في تحميل ملف:', error);
-            }
+            const metadata = await item.getMetadata();
+            const fileName = metadata.name.split('-').slice(2).join('-');
+            const uploadDate = new Date(metadata.timeCreated).toLocaleDateString('ar-SA');
+            createFileItem(fileName, metadata.name, metadata.size, uploadDate);
         }
         
         updateStats();
     } catch (error) {
-        console.error('خطأ في تحميل الملفات:', error);
+        console.error('❌ خطأ في تحميل الملفات:', error);
     }
 }
 
@@ -284,6 +255,6 @@ async function updateStats() {
         totalFiles.textContent = result.items.length;
         totalSize.textContent = formatFileSize(totalSizeBytes);
     } catch (error) {
-        console.error('خطأ في تحديث الإحصائيات:', error);
+        console.error('❌ خطأ في الإحصائيات:', error);
     }
 }
